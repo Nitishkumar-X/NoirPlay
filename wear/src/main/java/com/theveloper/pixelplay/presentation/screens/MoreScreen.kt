@@ -107,7 +107,7 @@ fun MoreScreen(
                 .padding(horizontal = 8.dp),
             columnState = columnState,
         ) {
-            item { Spacer(modifier = Modifier.height(18.dp)) }
+            item { Spacer(modifier = Modifier.height(2.dp)) }
 
             item {
                 Text(

@@ -81,7 +81,7 @@ fun BrowseScreen(
             modifier = Modifier.fillMaxSize(),
             columnState = columnState,
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+            item { Spacer(modifier = Modifier.height(2.dp)) }
 
             item {
                 Text(
