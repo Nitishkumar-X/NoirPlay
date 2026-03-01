@@ -92,12 +92,12 @@ fun WearPalette.surfaceContainerHighestColor(): Color = surfaceContainerHighest
 fun WearPixelPlayTheme(
     albumArt: Bitmap? = null,
     seedColorArgb: Int? = null,
-    phoneThemePalette: WearThemePalette? = null,
+    themePalette: WearThemePalette? = null,
     content: @Composable () -> Unit,
 ) {
-    val palette = remember(phoneThemePalette, albumArt, seedColorArgb) {
+    val palette = remember(themePalette, albumArt, seedColorArgb) {
         when {
-            phoneThemePalette != null -> phoneThemePalette.toWearPalette()
+            themePalette != null -> themePalette.toWearPalette()
             albumArt != null -> buildPaletteFromAlbumArt(albumArt)
             seedColorArgb != null -> buildPaletteFromSeedColor(Color(seedColorArgb))
             else -> DefaultWearPalette

@@ -10,8 +10,10 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.MediaMetadataRetriever
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.core.net.toUri
 import com.google.android.gms.cast.MediaStatus
 import com.google.android.gms.cast.framework.CastContext
@@ -26,17 +28,21 @@ import androidx.media3.session.SessionToken
 import androidx.media3.session.SessionCommand
 import androidx.core.content.ContextCompat
 import com.theveloper.pixelplay.data.model.Song
+import com.theveloper.pixelplay.data.preferences.AlbumArtPaletteStyle
+import com.theveloper.pixelplay.data.preferences.ThemePreference
 import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository
 import com.theveloper.pixelplay.data.repository.MusicRepository
 import com.theveloper.pixelplay.data.service.MusicService
 import com.theveloper.pixelplay.data.service.MusicNotificationProvider
 import com.theveloper.pixelplay.data.service.player.CastPlayer
 import com.theveloper.pixelplay.data.service.player.DualPlayerEngine
+import com.theveloper.pixelplay.presentation.viewmodel.ColorSchemeProcessor
 import com.theveloper.pixelplay.shared.WearBrowseRequest
 import com.theveloper.pixelplay.shared.WearBrowseResponse
 import com.theveloper.pixelplay.shared.WearDataPaths
 import com.theveloper.pixelplay.shared.WearLibraryItem
 import com.theveloper.pixelplay.shared.WearPlaybackCommand
+import com.theveloper.pixelplay.shared.WearThemePalette
 import com.theveloper.pixelplay.shared.WearTransferMetadata
 import com.theveloper.pixelplay.shared.WearTransferProgress
 import com.theveloper.pixelplay.shared.WearTransferRequest
@@ -79,6 +85,7 @@ class WearCommandReceiver : WearableListenerService() {
     @Inject lateinit var musicRepository: MusicRepository
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var dualPlayerEngine: DualPlayerEngine
+    @Inject lateinit var colorSchemeProcessor: ColorSchemeProcessor
     @Inject lateinit var transferStateStore: PhoneWatchTransferStateStore
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -1006,6 +1013,7 @@ class WearCommandReceiver : WearableListenerService() {
 
             val fileSize = getSongFileSize(song)
             val paletteSeedArgb = resolvePaletteSeedArgb(song)
+            val transferThemePalette = resolveTransferThemePalette(song)
             val transferArtworkBytes = resolveTransferArtworkBytes(song)
 
             // 4. Send metadata to watch
@@ -1022,6 +1030,7 @@ class WearCommandReceiver : WearableListenerService() {
                 bitrate = song.bitrate ?: 0,
                 sampleRate = song.sampleRate ?: 0,
                 paletteSeedArgb = paletteSeedArgb,
+                themePalette = transferThemePalette,
             )
             transferStateStore.markMetadata(
                 requestId = request.requestId,
@@ -1165,6 +1174,21 @@ class WearCommandReceiver : WearableListenerService() {
         } finally {
             bitmap.recycle()
         }
+    }
+
+    private suspend fun resolveTransferThemePalette(song: Song): WearThemePalette? {
+        val playerTheme = userPreferencesRepository.playerThemePreferenceFlow.first()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && playerTheme == ThemePreference.DYNAMIC) {
+            return buildWearThemePalette(dynamicDarkColorScheme(this))
+        }
+
+        val artUriString = song.albumArtUriString?.takeIf { it.isNotBlank() } ?: return null
+        val paletteStyle = AlbumArtPaletteStyle.fromStorageKey(
+            userPreferencesRepository.albumArtPaletteStyleFlow.first().storageKey
+        )
+        val schemePair = colorSchemeProcessor.getOrGenerateColorScheme(artUriString, paletteStyle)
+            ?: return null
+        return buildWearThemePalette(schemePair.dark)
     }
 
     private fun loadSongAlbumArtBitmapForTransfer(song: Song): Bitmap? {

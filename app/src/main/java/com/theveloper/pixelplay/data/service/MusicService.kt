@@ -7,15 +7,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color as AndroidColor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.LruCache
-import androidx.compose.material3.ColorScheme
 import androidx.core.app.NotificationCompat
-import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toBitmap
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -80,10 +77,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import com.theveloper.pixelplay.data.preferences.ThemePreference
 import com.theveloper.pixelplay.data.service.auto.AutoMediaBrowseTree
+import com.theveloper.pixelplay.data.service.wear.buildWearThemePalette
 import com.theveloper.pixelplay.data.service.wear.WearStatePublisher
 import com.theveloper.pixelplay.presentation.viewmodel.ColorSchemePair
 import com.theveloper.pixelplay.shared.WearIntents
-import com.theveloper.pixelplay.shared.WearThemePalette
 import com.theveloper.pixelplay.utils.MediaItemBuilder
 import kotlin.math.abs
 
@@ -1409,104 +1406,6 @@ class MusicService : MediaLibraryService() {
             repeatMode = repeatMode,
             wearThemePalette = wearThemePalette,
         )
-    }
-
-    private fun buildWearThemePalette(darkScheme: ColorScheme): WearThemePalette {
-        val surfaceContainer = darkScheme.surfaceContainer.toArgb()
-        val surfaceContainerLowest = darkScheme.surfaceContainerLowest.toArgb()
-        val surfaceContainerLow = darkScheme.surfaceContainerLow.toArgb()
-        val surfaceContainerHigh = darkScheme.surfaceContainerHigh.toArgb()
-        val surfaceContainerHighest = darkScheme.surfaceContainerHighest.toArgb()
-
-        val playContainer = darkScheme.onPrimaryContainer.toArgb()
-        val playContent = darkScheme.primaryContainer.toArgb()
-        val transportContainer = darkScheme.primary.toArgb()
-        val transportContent = darkScheme.onPrimary.toArgb()
-        val chipContainer = ColorUtils.blendARGB(
-            darkScheme.secondaryContainer.toArgb(),
-            surfaceContainerLow,
-            0.28f,
-        )
-
-        val gradientTop = ColorUtils.blendARGB(surfaceContainerHigh, playContainer, 0.34f)
-        val gradientMiddle = ColorUtils.blendARGB(
-            ColorUtils.blendARGB(surfaceContainer, transportContainer, 0.12f),
-            AndroidColor.BLACK,
-            0.34f,
-        )
-        val gradientBottom = ColorUtils.blendARGB(
-            ColorUtils.blendARGB(surfaceContainerLowest, transportContainer, 0.08f),
-            AndroidColor.BLACK,
-            0.68f,
-        )
-
-        return WearThemePalette(
-            gradientTopArgb = gradientTop,
-            gradientMiddleArgb = gradientMiddle,
-            gradientBottomArgb = gradientBottom,
-            surfaceContainerLowestArgb = surfaceContainerLowest,
-            surfaceContainerLowArgb = surfaceContainerLow,
-            surfaceContainerArgb = surfaceContainer,
-            surfaceContainerHighArgb = surfaceContainerHigh,
-            surfaceContainerHighestArgb = surfaceContainerHighest,
-            textPrimaryArgb = ensureReadable(
-                preferredColor = darkScheme.onSurface.toArgb(),
-                backgroundColor = gradientMiddle,
-            ),
-            textSecondaryArgb = ensureReadable(
-                preferredColor = darkScheme.onSurfaceVariant.toArgb(),
-                backgroundColor = gradientBottom,
-            ),
-            textErrorArgb = 0xFFFFB8C7.toInt(),
-            controlContainerArgb = playContainer,
-            controlContentArgb = ensureReadable(
-                preferredColor = playContent,
-                backgroundColor = playContainer,
-            ),
-            controlDisabledContainerArgb = surfaceContainerHighest,
-            controlDisabledContentArgb = ensureReadable(
-                preferredColor = darkScheme.onSurfaceVariant.toArgb(),
-                backgroundColor = surfaceContainerHighest,
-            ),
-            transportContainerArgb = transportContainer,
-            transportContentArgb = ensureReadable(
-                preferredColor = transportContent,
-                backgroundColor = transportContainer,
-            ),
-            chipContainerArgb = chipContainer,
-            chipContentArgb = ensureReadable(
-                preferredColor = darkScheme.onSecondaryContainer.toArgb(),
-                backgroundColor = chipContainer,
-            ),
-            favoriteActiveArgb = shiftHue(transportContainer, 34f),
-            shuffleActiveArgb = shiftHue(transportContainer, -72f),
-            repeatActiveArgb = shiftHue(transportContainer, -22f),
-        )
-    }
-
-    private fun shiftHue(color: Int, hueShift: Float): Int {
-        val hsl = FloatArray(3)
-        ColorUtils.colorToHSL(color, hsl)
-        hsl[0] = (hsl[0] + hueShift + 360f) % 360f
-        hsl[1] = (hsl[1] * 1.18f).coerceIn(0.42f, 0.92f)
-        hsl[2] = (hsl[2] + 0.08f).coerceIn(0.34f, 0.78f)
-        return ColorUtils.HSLToColor(hsl)
-    }
-
-    private fun ensureReadable(preferredColor: Int, backgroundColor: Int): Int {
-        val opaqueBackground = if (AndroidColor.alpha(backgroundColor) >= 255) {
-            backgroundColor
-        } else {
-            ColorUtils.compositeColors(backgroundColor, AndroidColor.BLACK)
-        }
-        val preferredContrast = ColorUtils.calculateContrast(preferredColor, opaqueBackground)
-        if (preferredContrast >= 3.0) return preferredColor
-
-        val light = 0xFFF6F2FF.toInt()
-        val dark = 0xFF17141E.toInt()
-        val lightContrast = ColorUtils.calculateContrast(light, opaqueBackground)
-        val darkContrast = ColorUtils.calculateContrast(dark, opaqueBackground)
-        return if (lightContrast >= darkContrast) light else dark
     }
 
     private val widgetArtByteArrayCache = object : LruCache<String, ByteArray>(5 * 256 * 1024) {

@@ -104,8 +104,13 @@ class WearPlayerViewModel @Inject constructor(
         if (target == WearOutputTarget.WATCH) localSeed else null
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val phoneThemePalette: StateFlow<WearThemePalette?> = playerState
-        .map { it.themePalette }
+    val themePalette: StateFlow<WearThemePalette?> = combine(
+        stateRepository.outputTarget,
+        stateRepository.playerState,
+        localPlayerRepository.localThemePalette,
+    ) { target, remoteState, localThemePalette ->
+        if (target == WearOutputTarget.PHONE) remoteState.themePalette else localThemePalette
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val isPhoneConnected: StateFlow<Boolean> = stateRepository.isPhoneConnected

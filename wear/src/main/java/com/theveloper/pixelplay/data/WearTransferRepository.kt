@@ -362,6 +362,7 @@ class WearTransferRepository @Inject constructor(
                     bitrate = metadata.bitrate,
                     sampleRate = metadata.sampleRate,
                     paletteSeedArgb = metadata.paletteSeedArgb,
+                    themePaletteJson = metadata.themePalette?.let { json.encodeToString(it) },
                     artworkPath = artworkPath,
                     localPath = localFile.absolutePath,
                     transferredAt = System.currentTimeMillis(),
