@@ -28,18 +28,27 @@ fun ExpressiveTopBarContent(
     subtitle: String? = null,
     collapsedTitleStartPadding: Dp = 56.dp, // Default safe for standard Nav Icon
     expandedTitleStartPadding: Dp = 16.dp,
+    collapsedTitleEndPadding: Dp = 24.dp,
+    expandedTitleEndPadding: Dp = 24.dp,
     containerHeightRange: Pair<Dp, Dp> = 88.dp to 56.dp,
     collapsedTitleVerticalBias: Float = -1f,
     maxLines: Int = 2,
+    collapsedSubtitleMaxLines: Int = 1,
+    expandedSubtitleMaxLines: Int = 1,
     contentColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    subtitleColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    fadeSubtitleOnCollapse: Boolean = true,
     supportingContent: (@Composable () -> Unit)? = null
 ) {
     val clampedFraction = collapseFraction.coerceIn(0f, 1f)
     val titleScale = lerp(1.2f, 0.8f, clampedFraction)
     val titlePaddingStart = lerp(expandedTitleStartPadding, collapsedTitleStartPadding, clampedFraction)
+    val titlePaddingEnd = lerp(expandedTitleEndPadding, collapsedTitleEndPadding, clampedFraction)
     val titleVerticalBias = lerp(1f, collapsedTitleVerticalBias, clampedFraction)
     val animatedTitleAlignment = BiasAlignment(horizontalBias = -1f, verticalBias = titleVerticalBias)
     val titleContainerHeight = lerp(containerHeightRange.first, containerHeightRange.second, clampedFraction)
+    val subtitleAlpha = if (fadeSubtitleOnCollapse) 1f - clampedFraction else 1f
+    val subtitleMaxLines = if (clampedFraction < 0.5f) expandedSubtitleMaxLines else collapsedSubtitleMaxLines
 
     Box(modifier = modifier.fillMaxSize()) {
         Box(
@@ -47,7 +56,7 @@ fun ExpressiveTopBarContent(
                 .align(animatedTitleAlignment)
                 .height(titleContainerHeight)
                 .fillMaxWidth()
-                .padding(start = titlePaddingStart, end = 24.dp)
+                .padding(start = titlePaddingStart, end = titlePaddingEnd)
         ) {
             Column(
                 modifier = Modifier.align(Alignment.CenterStart)
@@ -70,8 +79,10 @@ fun ExpressiveTopBarContent(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.alpha(1f - clampedFraction)
+                        color = subtitleColor,
+                        maxLines = subtitleMaxLines,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.alpha(subtitleAlpha)
                     )
                 }
                 if (supportingContent != null) {

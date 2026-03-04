@@ -29,10 +29,20 @@ fun CollapsibleCommonTopBar(
     headerHeight: Dp,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
     collapsedTitleStartPadding: Dp = 68.dp,
     expandedTitleStartPadding: Dp = 20.dp,
+    collapsedTitleEndPadding: Dp = 24.dp,
+    expandedTitleEndPadding: Dp = 24.dp,
+    containerHeightRange: Pair<Dp, Dp> = 88.dp to 56.dp,
     maxLines: Int = 1,
+    collapsedSubtitleMaxLines: Int = 1,
+    expandedSubtitleMaxLines: Int = 1,
     containerColor: Color? = null,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    fadeSubtitleOnCollapse: Boolean = true,
+    supportingContent: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     // Logic from GenreDetailScreen:
@@ -88,9 +98,19 @@ fun CollapsibleCommonTopBar(
                 title = title,
                 collapseFraction = collapseFraction,
                 modifier = Modifier.fillMaxSize(),
+                subtitle = subtitle,
                 collapsedTitleStartPadding = collapsedTitleStartPadding,
                 expandedTitleStartPadding = expandedTitleStartPadding,
-                maxLines = maxLines
+                collapsedTitleEndPadding = collapsedTitleEndPadding,
+                expandedTitleEndPadding = expandedTitleEndPadding,
+                containerHeightRange = containerHeightRange,
+                maxLines = maxLines,
+                collapsedSubtitleMaxLines = collapsedSubtitleMaxLines,
+                expandedSubtitleMaxLines = expandedSubtitleMaxLines,
+                contentColor = contentColor,
+                subtitleColor = subtitleColor,
+                fadeSubtitleOnCollapse = fadeSubtitleOnCollapse,
+                supportingContent = supportingContent
             )
         }
     }
