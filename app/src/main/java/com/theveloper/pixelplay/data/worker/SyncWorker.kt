@@ -327,6 +327,11 @@ constructor(
                     val allSongIds = musicDao.getAllSongIds().toSet()
                     AlbumArtCacheManager.cleanOrphanedCacheFiles(applicationContext, allSongIds)
 
+                    // Sync cloud songs into the unified songs table
+                    syncTelegramData()
+                    syncNeteaseData()
+                    syncNavidromeData()
+
                     // Recalculate total
                     val finalTotalSongs = musicDao.getSongCount().first()
 

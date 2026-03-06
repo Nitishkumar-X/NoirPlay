@@ -134,6 +134,7 @@ interface MusicDao {
         AND content_uri_string NOT LIKE 'netease://%'
         AND content_uri_string NOT LIKE 'qqmusic://%'
         AND content_uri_string NOT LIKE 'navidrome://%'
+        AND content_uri_string NOT LIKE 'gdrive://%'
     """)
     suspend fun getAllMediaStoreSongIds(): List<Long>
 

@@ -87,6 +87,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.size.Size
 import com.theveloper.pixelplay.R
 import com.theveloper.pixelplay.data.model.Song
@@ -148,6 +149,7 @@ fun UnifiedPlayerSheet(
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
 
     val infrequentPlayerStateReference = playerViewModel.stablePlayerState.collectAsStateWithLifecycle()
     val infrequentPlayerState = infrequentPlayerStateReference.value
@@ -375,6 +377,17 @@ fun UnifiedPlayerSheet(
         showPlayerContentArea = showPlayerContentArea,
         currentSheetContentState = currentSheetContentState
     )
+    val canHandlePlayerBack by remember(
+        sheetBackAndDragState.predictiveBackEnabled,
+        showQueueSheet,
+        castSheetState.showCastSheet
+    ) {
+        derivedStateOf {
+            sheetBackAndDragState.predictiveBackEnabled &&
+                !showQueueSheet &&
+                !castSheetState.showCastSheet
+        }
+    }
     val velocityTracker = remember { VelocityTracker() }
     val sheetModalOverlayController = rememberSheetModalOverlayController(
         scope = scope,
@@ -416,13 +429,14 @@ fun UnifiedPlayerSheet(
     )
 
     PlayerSheetPredictiveBackHandler(
-        enabled = sheetBackAndDragState.predictiveBackEnabled,
+        enabled = canHandlePlayerBack,
         playerViewModel = playerViewModel,
         sheetCollapsedTargetY = sheetCollapsedTargetY,
         sheetExpandedTargetY = sheetExpandedTargetY,
         sheetMotionController = sheetMotionController,
         animationDurationMs = ANIMATION_DURATION_MS,
-        onSwipeEdgeChanged = { playerViewModel.updatePredictiveBackSwipeEdge(it) }
+        onSwipeEdgeChanged = { playerViewModel.updatePredictiveBackSwipeEdge(it) },
+        registrationKey = currentBackStackEntry?.id
     )
 
     val sheetOverlayState = rememberSheetOverlayState(
