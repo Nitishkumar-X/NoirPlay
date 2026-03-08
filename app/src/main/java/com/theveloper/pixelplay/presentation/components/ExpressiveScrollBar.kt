@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.math.abs
 
 private data class ScrollMetrics(
     val progress: Float,
@@ -129,6 +130,8 @@ fun ExpressiveScrollBar(
         val density = LocalDensity.current
         val constraintsMaxWidth = maxWidth
         val constraintsMaxHeight = maxHeight
+        val coarseJumpThresholdPx = with(density) { 16.dp.toPx() }
+        val smoothJumpMinDistancePx = with(density) { 10.dp.toPx() }
 
         val canScrollForward by remember { derivedStateOf { listState?.canScrollForward ?: gridState?.canScrollForward ?: false } }
         val canScrollBackward by remember { derivedStateOf { listState?.canScrollBackward ?: gridState?.canScrollBackward ?: false } }
@@ -261,20 +264,33 @@ fun ExpressiveScrollBar(
         LaunchedEffect(listState, gridState, constraintsMaxHeight, minHeight, isDragging) {
             if (isDragging) return@LaunchedEffect
 
-            snapshotFlow { getScrollStats().progress }
+            snapshotFlow { getScrollStats() }
                 .distinctUntilChanged()
-                .collectLatest { targetProgress ->
+                .collectLatest { stats ->
+                    val targetProgress = stats.progress
                     if (!hasSyncedDisplayedProgress) {
                         displayedProgress.snapTo(targetProgress)
                         hasSyncedDisplayedProgress = true
                     } else {
-                        displayedProgress.animateTo(
-                            targetValue = targetProgress,
-                            animationSpec = tween(
-                                durationMillis = 90,
-                                easing = FastOutSlowInEasing
+                        val handleDeltaPx =
+                            abs(targetProgress - displayedProgress.value) * stats.scrollableHeight
+                        val estimatedStepPx =
+                            stats.scrollableHeight / stats.maxScrollIndex.coerceAtLeast(1).toFloat()
+                        val shouldSmoothJump =
+                            estimatedStepPx >= coarseJumpThresholdPx &&
+                                handleDeltaPx >= smoothJumpMinDistancePx
+
+                        if (shouldSmoothJump) {
+                            displayedProgress.animateTo(
+                                targetValue = targetProgress,
+                                animationSpec = tween(
+                                    durationMillis = 70,
+                                    easing = FastOutSlowInEasing
+                                )
                             )
-                        )
+                        } else {
+                            displayedProgress.snapTo(targetProgress)
+                        }
                     }
                 }
         }
