@@ -545,7 +545,12 @@ fun LyricsSheet(
                                 accentColor = accentColor,
                                 textStyle = scaledTextStyle,
                                 onLineClick = { syncedLine -> 
-                                    onSeekTo(syncedLine.time.toLong())
+                                    onSeekTo(
+                                        resolveSeekPositionMs(
+                                            lineTimeMs = syncedLine.time.toLong(),
+                                            lyricsSyncOffsetMs = lyricsSyncOffset
+                                        )
+                                    )
                                     resetImmersiveTimer()
                                 },
                                 highlightZoneFraction = highlightZoneFraction,
@@ -1272,6 +1277,11 @@ internal fun resolveHighlightedWordIndex(
     if (positionMs < lineStartTimeMs || positionMs >= lineEndTimeMs) return -1
     return words.indexOfLast { it.time.toLong() <= positionMs }
 }
+
+internal fun resolveSeekPositionMs(
+    lineTimeMs: Long,
+    lyricsSyncOffsetMs: Int
+): Long = (lineTimeMs - lyricsSyncOffsetMs.toLong()).coerceAtLeast(0L)
 
 internal data class HighlightZoneMetrics(
     val topPadding: Dp,
