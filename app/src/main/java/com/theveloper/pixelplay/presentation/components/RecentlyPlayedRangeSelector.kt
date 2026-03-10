@@ -68,7 +68,7 @@ fun RecentlyPlayedRangeSelector(
                 modifier = Modifier.animateItem(
                     fadeInSpec = null,
                     fadeOutSpec = null,
-                    placementSpec = motionScheme.defaultSpatialSpec()
+                    placementSpec = motionScheme.fastSpatialSpec()
                 )
             )
         }
@@ -101,7 +101,7 @@ private fun RecentlyPlayedRangeChip(
         } else {
             0.dp
         },
-        animationSpec = motionScheme.fastSpatialSpec(),
+        animationSpec = motionScheme.defaultSpatialSpec(),
         label = "RecentlyPlayedRangeChipIconSlotWidth"
     )
     val iconAlpha by animateFloatAsState(
@@ -111,7 +111,7 @@ private fun RecentlyPlayedRangeChip(
     )
     val iconScale by animateFloatAsState(
         targetValue = if (selected) 1f else 0.82f,
-        animationSpec = motionScheme.fastSpatialSpec(),
+        animationSpec = motionScheme.defaultSpatialSpec(),
         label = "RecentlyPlayedRangeChipIconScale"
     )
 
