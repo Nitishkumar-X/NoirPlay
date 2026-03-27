@@ -11,8 +11,14 @@ object WearDataPaths {
     /** Message path for playback commands (watch -> phone) */
     const val PLAYBACK_COMMAND = "/playback_command"
 
+    /** Message path for playback command results (phone -> watch) */
+    const val PLAYBACK_RESULT = "/playback_result"
+
     /** Message path for volume commands (watch -> phone) */
     const val VOLUME_COMMAND = "/volume_command"
+
+    /** Message path for volume state updates (phone -> watch) */
+    const val VOLUME_STATE = "/volume_state"
 
     /** Key for the album art Asset within a DataItem */
     const val KEY_ALBUM_ART = "album_art"
@@ -29,6 +35,12 @@ object WearDataPaths {
     /** Message path for library browse responses (phone -> watch) */
     const val BROWSE_RESPONSE = "/browse_response"
 
+    /** Message path for watch library status queries */
+    const val WATCH_LIBRARY_QUERY = "/watch_library_query"
+
+    /** Message path for watch library state responses */
+    const val WATCH_LIBRARY_STATE = "/watch_library_state"
+
     /** Message path for transfer requests (watch -> phone) */
     const val TRANSFER_REQUEST = "/transfer_request"
 
@@ -38,9 +50,18 @@ object WearDataPaths {
     /** ChannelClient path for audio file streaming (phone -> watch) */
     const val TRANSFER_CHANNEL = "/transfer_audio"
 
+    /** ChannelClient path for artwork streaming (phone -> watch) */
+    const val TRANSFER_ARTWORK_CHANNEL = "/transfer_artwork"
+
     /** Message path for transfer progress updates (phone -> watch) */
     const val TRANSFER_PROGRESS = "/transfer_progress"
 
     /** Message path for transfer cancellation (watch -> phone) */
     const val TRANSFER_CANCEL = "/transfer_cancel"
+
+    /** Message path for favorites sync requests (watch -> phone) */
+    const val FAVORITES_SYNC_REQUEST = "/favorites_sync_request"
+
+    /** Message path for favorites sync progress/state (phone -> watch) */
+    const val FAVORITES_SYNC_STATE = "/favorites_sync_state"
 }

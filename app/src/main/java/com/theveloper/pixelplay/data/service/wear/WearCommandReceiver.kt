@@ -16,7 +16,7 @@ import androidx.media3.session.SessionToken
 import androidx.media3.session.SessionCommand
 import androidx.core.content.ContextCompat
 import com.theveloper.pixelplay.data.model.Song
-import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository
+import com.theveloper.pixelplay.data.preferences.PlaylistPreferencesRepository
 import com.theveloper.pixelplay.data.repository.MusicRepository
 import com.theveloper.pixelplay.data.service.MusicService
 import com.theveloper.pixelplay.data.service.MusicNotificationProvider
@@ -60,7 +60,7 @@ import javax.inject.Inject
 class WearCommandReceiver : WearableListenerService() {
 
     @Inject lateinit var musicRepository: MusicRepository
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var playlistPreferencesRepository: PlaylistPreferencesRepository
 
     private val json = Json { ignoreUnknownKeys = true }
     private var mediaController: MediaController? = null
@@ -215,7 +215,7 @@ class WearCommandReceiver : WearableListenerService() {
             }
             "playlist" -> {
                 val playlistId = contextId ?: return emptyList()
-                val playlist = userPreferencesRepository.userPlaylistsFlow.first()
+                val playlist = playlistPreferencesRepository.userPlaylistsFlow.first()
                     .find { it.id == playlistId } ?: return emptyList()
                 val songs = musicRepository.getSongsByIds(playlist.songIds).first()
                 // Maintain playlist order
@@ -319,7 +319,7 @@ class WearCommandReceiver : WearableListenerService() {
             }
 
             WearBrowseRequest.PLAYLISTS -> {
-                userPreferencesRepository.userPlaylistsFlow.first()
+                playlistPreferencesRepository.userPlaylistsFlow.first()
                     .map { playlist ->
                         WearLibraryItem(
                             id = playlist.id,
@@ -359,7 +359,7 @@ class WearCommandReceiver : WearableListenerService() {
             WearBrowseRequest.PLAYLIST_SONGS -> {
                 val playlistId = contextId
                     ?: throw IllegalArgumentException("Missing playlistId for PLAYLIST_SONGS")
-                val playlist = userPreferencesRepository.userPlaylistsFlow.first()
+                val playlist = playlistPreferencesRepository.userPlaylistsFlow.first()
                     .find { it.id == playlistId }
                     ?: throw IllegalArgumentException("Playlist not found: $playlistId")
                 val songs = musicRepository.getSongsByIds(playlist.songIds).first()
