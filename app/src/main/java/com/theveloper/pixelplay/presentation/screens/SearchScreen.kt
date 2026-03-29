@@ -679,7 +679,14 @@ fun SearchResultsList(
     val systemBarPaddingBottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding() + 94.dp
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(
+                RoundedCornerShape(
+                    topStart = 28.dp,
+                    topEnd = 28.dp
+                )
+            ),
         contentPadding = PaddingValues(
             top = 8.dp,
             bottom = if (imePadding <= 8.dp) (MiniPlayerHeight + systemBarPaddingBottom) else imePadding
