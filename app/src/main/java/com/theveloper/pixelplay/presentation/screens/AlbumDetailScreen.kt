@@ -423,7 +423,7 @@ fun AlbumDetailScreen(
                         }
                         showSongInfoBottomSheet = false
                     },
-                    onEditSong = { newTitle, newArtist, newAlbum, newGenre, newLyrics, newTrackNumber, newDiscNumber, coverArtUpdate ->
+                    onEditSong = { newTitle, newArtist, newAlbum, newGenre, newLyrics, newTrackNumber, newDiscNumber, replayGainTrackGainDb, replayGainAlbumGainDb, coverArtUpdate ->
                         playerViewModel.editSongMetadata(
                             currentSong,
                             newTitle,
@@ -433,6 +433,8 @@ fun AlbumDetailScreen(
                             newLyrics,
                             newTrackNumber,
                             newDiscNumber,
+                            replayGainTrackGainDb,
+                            replayGainAlbumGainDb,
                             coverArtUpdate
                         )
                     },
