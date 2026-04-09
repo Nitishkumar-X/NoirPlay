@@ -57,6 +57,7 @@ fun RowScope.CustomNavigationBarItem(
     selectedIcon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    compactMode: Boolean = false,
     label: @Composable (() -> Unit)? = null,
     contentDescription: String? = null,
     alwaysShowLabel: Boolean = true,
@@ -91,6 +92,13 @@ fun RowScope.CustomNavigationBarItem(
 
     // Determinar si mostrar la etiqueta
     val showLabel = label != null && (alwaysShowLabel || selected)
+    val indicatorWidth = if (compactMode) 56.dp else 64.dp
+    val indicatorHeight = if (compactMode) 28.dp else 32.dp
+    val iconWidth = if (compactMode) 44.dp else 48.dp
+    val iconHeight = if (compactMode) 22.dp else 24.dp
+    val indicatorPadding = if (compactMode) 2.dp else 4.dp
+    val indicatorShape = RoundedCornerShape(if (compactMode) 14.dp else 16.dp)
+    val iconShape = RoundedCornerShape(if (compactMode) 11.dp else 12.dp)
 
     // Layout principal
     Column(
@@ -116,7 +124,7 @@ fun RowScope.CustomNavigationBarItem(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(64.dp, 32.dp) // Tamaño específico para el área clicable
+                .size(indicatorWidth, indicatorHeight)
         ) {
             // Indicador de fondo (pill shape para Material 3 Expressive)
             androidx.compose.animation.AnimatedVisibility(
@@ -138,10 +146,10 @@ fun RowScope.CustomNavigationBarItem(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = indicatorPadding)
                         .background(
                             color = indicatorColor,
-                            shape = RoundedCornerShape(16.dp)
+                            shape = indicatorShape
                         )
                 )
             }
@@ -150,8 +158,8 @@ fun RowScope.CustomNavigationBarItem(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(48.dp, 24.dp) // Área clicable reducida
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(iconWidth, iconHeight)
+                    .clip(iconShape)
                     .graphicsLayer {
                         scaleX = iconScale
                         scaleY = iconScale
