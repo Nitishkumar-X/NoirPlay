@@ -213,6 +213,7 @@ fun SettingsCategoryScreen(
     val isLoadingDirectories by settingsViewModel.isLoadingDirectories.collectAsStateWithLifecycle()
     val isExplorerPriming by settingsViewModel.isExplorerPriming.collectAsStateWithLifecycle()
     val isExplorerReady by settingsViewModel.isExplorerReady.collectAsStateWithLifecycle()
+    val isCurrentDirectoryResolved by settingsViewModel.isCurrentDirectoryResolved.collectAsStateWithLifecycle()
     val isSyncing by settingsViewModel.isSyncing.collectAsStateWithLifecycle()
     val syncProgress by settingsViewModel.syncProgress.collectAsStateWithLifecycle()
     val dataTransferProgress by settingsViewModel.dataTransferProgress.collectAsStateWithLifecycle()
@@ -426,21 +427,8 @@ fun SettingsCategoryScreen(
                                     leadingIcon = { Icon(Icons.Outlined.Folder, null, tint = MaterialTheme.colorScheme.secondary) },
                                     trailingIcon = { Icon(Icons.Rounded.ChevronRight, "Open", tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                                     onClick = {
-                                        val hasAllFilesPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                            Environment.isExternalStorageManager()
-                                        } else true
-
-                                        if (!hasAllFilesPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                                            intent.data = "package:${context.packageName}".toUri()
-                                            context.startActivity(intent)
-                                            return@SettingsItem
-                                        }
-
                                         showExplorerSheet = true
-                                        if (!isExplorerReady && !isExplorerPriming) {
-                                            settingsViewModel.primeExplorer()
-                                        }
+                                        settingsViewModel.openExplorer()
                                     }
                                 )
                                 SettingsItem(
@@ -1332,6 +1320,9 @@ fun SettingsCategoryScreen(
         availableStorages = availableStorages,
         selectedStorageIndex = selectedStorageIndex,
         isLoading = isLoadingDirectories,
+        isPriming = isExplorerPriming,
+        isReady = isExplorerReady,
+        isCurrentDirectoryResolved = isCurrentDirectoryResolved,
         isAtRoot = settingsViewModel.isAtRoot(),
         rootDirectory = explorerRoot,
         onNavigateTo = settingsViewModel::loadDirectory,

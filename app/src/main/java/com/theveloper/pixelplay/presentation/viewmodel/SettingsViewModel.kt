@@ -264,6 +264,7 @@ class SettingsViewModel @Inject constructor(
     val isLoadingDirectories = fileExplorerStateHolder.isLoading
     val isExplorerPriming = fileExplorerStateHolder.isPrimingExplorer
     val isExplorerReady = fileExplorerStateHolder.isExplorerReady
+    val isCurrentDirectoryResolved = fileExplorerStateHolder.isCurrentDirectoryResolved
     private var hasPendingDirectoryRuleChanges = false
     private var latestDirectoryRuleUpdateJob: Job? = null
 
@@ -535,6 +536,10 @@ class SettingsViewModel @Inject constructor(
 
     fun primeExplorer() {
         fileExplorerStateHolder.primeExplorerRoot()
+    }
+
+    fun openExplorer() {
+        fileExplorerStateHolder.openExplorerRoot()
     }
 
     fun navigateUp() {
