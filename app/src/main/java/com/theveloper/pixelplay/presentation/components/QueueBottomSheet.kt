@@ -633,7 +633,7 @@ fun QueueBottomSheet(
         modifier = modifier,
         shape = shape,
         tonalElevation = tonalElevation,
-        color = colors.surfaceContainer,
+        color = colors.primaryContainer, //cambiar este
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
@@ -1689,7 +1689,7 @@ private fun QueueMiniPlayer(
             .background(
                 brush = Brush.verticalGradient(
                     listOf(
-                        colors.primaryContainer,
+                        colors.surfaceContainer,
                         Color.Transparent
                     )
                 )
