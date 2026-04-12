@@ -846,6 +846,7 @@ class MainActivity : ComponentActivity() {
                                     currentRoute = currentRoute,
                                     navBarStyle = navBarStyle,
                                     compactMode = navBarCompactMode,
+                                    bottomBarPadding = bottomBarPadding,
                                     onSearchIconDoubleTap = onSearchIconDoubleTap,
                                     modifier = Modifier.fillMaxSize()
                                 )

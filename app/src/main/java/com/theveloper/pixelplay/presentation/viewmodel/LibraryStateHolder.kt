@@ -111,7 +111,6 @@ class LibraryStateHolder @Inject constructor(
         }
         .flowOn(Dispatchers.IO)
 
-
     private val _currentAlbumSortOption = MutableStateFlow<SortOption>(SortOption.AlbumTitleAZ)
     val currentAlbumSortOption = _currentAlbumSortOption.asStateFlow()
 
@@ -123,6 +122,24 @@ class LibraryStateHolder @Inject constructor(
 
     private val _currentFavoriteSortOption = MutableStateFlow<SortOption>(SortOption.LikedSongDateLiked)
     val currentFavoriteSortOption = _currentFavoriteSortOption.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val albumsPagingFlow: kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<Album>> =
+        kotlinx.coroutines.flow.combine(_currentAlbumSortOption, effectiveStorageFilter) { sort, filter ->
+            sort to filter
+        }.flatMapLatest { (sortOption, filter) ->
+            musicRepository.getPaginatedAlbums(sortOption, filter)
+        }
+        .flowOn(Dispatchers.IO)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val artistsPagingFlow: kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<Artist>> =
+        kotlinx.coroutines.flow.combine(_currentArtistSortOption, effectiveStorageFilter) { sort, filter ->
+            sort to filter
+        }.flatMapLatest { (sortOption, filter) ->
+            musicRepository.getPaginatedArtists(sortOption, filter)
+        }
+        .flowOn(Dispatchers.IO)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val favoritesPagingFlow: kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<Song>> =

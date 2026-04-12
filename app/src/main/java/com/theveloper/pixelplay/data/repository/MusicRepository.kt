@@ -28,6 +28,22 @@ interface MusicRepository {
     fun getPaginatedSongs(sortOption: com.theveloper.pixelplay.data.model.SortOption, storageFilter: com.theveloper.pixelplay.data.model.StorageFilter): Flow<PagingData<Song>>
 
     /**
+     * Returns paginated albums for efficient display in library tabs.
+     */
+    fun getPaginatedAlbums(
+        sortOption: com.theveloper.pixelplay.data.model.SortOption,
+        storageFilter: com.theveloper.pixelplay.data.model.StorageFilter = com.theveloper.pixelplay.data.model.StorageFilter.ALL
+    ): Flow<PagingData<Album>>
+
+    /**
+     * Returns paginated artists for efficient display in library tabs.
+     */
+    fun getPaginatedArtists(
+        sortOption: com.theveloper.pixelplay.data.model.SortOption,
+        storageFilter: com.theveloper.pixelplay.data.model.StorageFilter = com.theveloper.pixelplay.data.model.StorageFilter.ALL
+    ): Flow<PagingData<Artist>>
+
+    /**
      * Returns paginated favorite songs for efficient display.
      * @return Flow of PagingData<Song> for use with LazyPagingItems.
      */
