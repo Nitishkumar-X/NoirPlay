@@ -1367,34 +1367,38 @@ class PlayerViewModel @Inject constructor(
      * fresh playback regardless of current state, and correctly handles the case
      * where the MediaController isn't ready yet (cold start from tile).
      *
-     * Uses allSongsFlow (StateFlow populated after resetAndLoadInitialData) instead
-     * of querying the DB directly, which can be empty on cold start before sync runs.
+     * Queries a bounded random sample directly from the repository so the tile does
+     * not depend on the eager in-memory song cache being populated first.
      */
     fun triggerShuffleAllFromTile() {
         Timber.d("[TileDebug] triggerShuffleAllFromTile called. mediaController=${mediaController != null}")
         val action: () -> Unit = {
             Timber.d("[TileDebug] action() invoked")
             viewModelScope.launch {
-                // If the in-memory library is already loaded, use it immediately
-                var songs = allSongsFlow.value
-                Timber.d("[TileDebug] allSongsFlow has ${songs.size} songs immediately")
+                var songs = musicRepository.getRandomSongs(limit = 500)
+                Timber.d("[TileDebug] Repository returned ${songs.size} random songs immediately")
 
                 if (songs.isEmpty()) {
-                    // Library not loaded yet — trigger a sync and wait up to 30s
-                    Timber.d("[TileDebug] Library empty, triggering sync and waiting for allSongsFlow")
+                    // Cold start or stale DB state: trigger a sync and retry the bounded query.
+                    Timber.d("[TileDebug] No songs available yet, triggering sync and retrying repository sample")
                     syncManager.sync()
-                    val result = withTimeoutOrNull(30_000L) {
-                        allSongsFlow.first { it.isNotEmpty() }
+                    songs = withTimeoutOrNull(30_000L) {
+                        var refreshedSongs = emptyList<Song>()
+                        while (refreshedSongs.isEmpty()) {
+                            refreshedSongs = musicRepository.getRandomSongs(limit = 500)
+                            if (refreshedSongs.isEmpty()) {
+                                delay(500L)
+                            }
+                        }
+                        refreshedSongs
                     }
-                    songs = result ?: persistentListOf()
-                    Timber.d("[TileDebug] After wait, allSongsFlow has ${songs.size} songs")
+                        ?: emptyList()
+                    Timber.d("[TileDebug] After retry, repository returned ${songs.size} songs")
                 }
 
                 if (songs.isNotEmpty()) {
-                    // Shuffle a random subset (up to 500) to avoid loading entire library
-                    val subset = if (songs.size > 500) songs.shuffled().take(500) else songs.toList()
-                    Timber.d("[TileDebug] Calling playSongsShuffled with ${subset.size} songs")
-                    playSongsShuffled(subset, "All Songs (Shuffled)", startAtZero = true)
+                    Timber.d("[TileDebug] Calling playSongsShuffled with ${songs.size} songs")
+                    playSongsShuffled(songs, "All Songs (Shuffled)", startAtZero = true)
                 } else {
                     Timber.w("[TileDebug] No songs found even after sync - library may be empty")
                     sendToast("No songs found in library")
@@ -1787,7 +1791,7 @@ class PlayerViewModel @Inject constructor(
             toastEmitter = { msg -> _toastEvents.emit(msg) },
             mediaControllerProvider = { mediaController },
             currentSongIdProvider = { stablePlayerState.map { it.currentSong?.id }.stateIn(viewModelScope, SharingStarted.Eagerly, null) },
-            songTitleResolver = { songId -> libraryStateHolder.allSongs.value.find { it.id == songId }?.title ?: "Unknown" }
+            songTitleResolver = { songId -> libraryStateHolder.allSongsById.value[songId]?.title ?: "Unknown" }
         )
 
         // Initialize SearchStateHolder
@@ -1909,7 +1913,7 @@ class PlayerViewModel @Inject constructor(
                     it.copy(currentPlaybackQueue = newQueue.toPlaybackQueue())
                 }
             },
-            getMasterAllSongs = { libraryStateHolder.allSongs.value },
+            getSongsByIdMap = { libraryStateHolder.allSongsById.value },
             onTransferBackComplete = { startProgressUpdates() },
             onSheetVisible = { _isSheetVisible.value = true },
             onDisconnect = { disconnect() },
@@ -2670,7 +2674,7 @@ class PlayerViewModel @Inject constructor(
                             playerCtrl.seekTo(0L)
                             playerCtrl.pause()
 
-                            val finishedSongTitle = libraryStateHolder.allSongs.value.find { it.id == previousSongId }?.title
+                            val finishedSongTitle = libraryStateHolder.allSongsById.value[previousSongId]?.title
                                 ?: "Track"
 
                             viewModelScope.launch {
@@ -3823,11 +3827,15 @@ class PlayerViewModel @Inject constructor(
                             currentSong != null -> {
                                 loadAndPlaySong(currentSong)
                             }
-                            libraryStateHolder.allSongs.value.isNotEmpty() -> {
-                                loadAndPlaySong(libraryStateHolder.allSongs.value.first())
-                            }
                             else -> {
-                                controller.play()
+                                viewModelScope.launch {
+                                    val fallbackSong = musicRepository.getFirstPlayableSong()
+                                    if (fallbackSong != null) {
+                                        loadAndPlaySong(fallbackSong)
+                                    } else {
+                                        controller.play()
+                                    }
+                                }
                             }
                         }
                     } else {

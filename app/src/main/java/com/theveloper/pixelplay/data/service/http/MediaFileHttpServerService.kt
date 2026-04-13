@@ -1097,17 +1097,44 @@ class MediaFileHttpServerService : Service() {
     }
 
     private fun resolvePreferredAudioMimeType(song: Song, uri: Uri): String? {
-        val signatureMimeType = detectAudioMimeTypeBySignature(song, uri)
         val providerMimeType = runCatching { contentResolver.getType(uri) }.getOrNull()
-        val fallbackMimeType = song.mimeType ?: providerMimeType ?: resolveAudioMimeTypeFromPath(song.path)
         val normalizedFallback = listOfNotNull(song.mimeType, providerMimeType, resolveAudioMimeTypeFromPath(song.path))
             .firstNotNullOfOrNull { normalizeCastAudioMimeType(it) }
+
+        // Container formats identified by metadata/extension are reliable — do not override them
+        // with signature detection, which can produce false positives (e.g. 0xFF sync words inside
+        // an MP4 moov atom are misread as AAC/MPEG framing). Only use signature to upgrade truly
+        // ambiguous metadata types (audio/mpeg, audio/aac) or when metadata is absent.
+        val isContainerFormat = normalizedFallback != null &&
+            normalizedFallback != "audio/mpeg" &&
+            normalizedFallback != "audio/aac"
+
+        if (isContainerFormat) {
+            // Metadata says it's a container (mp4, flac, wav, ogg, webm…). Trust it.
+            // Only override if signature found a *different* container magic at file level.
+            val signatureMimeType = detectAudioMimeTypeBySignature(song, uri)
+            val signatureIsContainer = signatureMimeType != null &&
+                signatureMimeType != "audio/mpeg" &&
+                signatureMimeType != "audio/aac"
+            if (signatureIsContainer && signatureMimeType != normalizedFallback) {
+                Log.w(
+                    "PX_CAST_HTTP",
+                    "MIME container-mismatch songId=${song.id} meta=$normalizedFallback signature=$signatureMimeType — trusting meta"
+                )
+            }
+            // Always prefer the container type from metadata over signature for container formats.
+            return normalizedFallback
+        }
+
+        // Metadata is ambiguous (audio/mpeg or audio/aac) or absent — use signature to resolve.
+        val signatureMimeType = detectAudioMimeTypeBySignature(song, uri)
         if (signatureMimeType != null && signatureMimeType != normalizedFallback) {
             Log.w(
                 "PX_CAST_HTTP",
-                "MIME mismatch songId=${song.id} fallback=$normalizedFallback signature=$signatureMimeType"
+                "MIME mismatch songId=${song.id} fallback=$normalizedFallback signature=$signatureMimeType — using signature"
             )
         }
+        val fallbackMimeType = song.mimeType ?: providerMimeType ?: resolveAudioMimeTypeFromPath(song.path)
         return signatureMimeType ?: normalizedFallback ?: fallbackMimeType
     }
 
@@ -1137,6 +1164,8 @@ class MediaFileHttpServerService : Service() {
             "audio/mp4",
             "audio/x-m4a",
             "audio/m4a",
+            // M4A/ALAC files may be reported by MediaExtractor as audio/alac — treat as mp4
+            "audio/alac",
             "audio/3gpp",
             "audio/3gp" -> "audio/mp4"
 
@@ -1155,6 +1184,11 @@ class MediaFileHttpServerService : Service() {
             "audio/amr-wb",
             "audio/l16",
             "audio/l24" -> normalized
+
+            // AIFF is not natively supported by Cast. Map to audio/mpeg as best-effort fallback.
+            "audio/aiff",
+            "audio/x-aiff",
+            "audio/aif" -> "audio/mpeg"
 
             else -> null
         }
@@ -1261,7 +1295,9 @@ class MediaFileHttpServerService : Service() {
         ) {
             return "audio/aiff"
         }
-        if (remaining >= 12 &&
+        // ISO Base Media File Format (MP4/M4A/M4B): check for 'ftyp' box at bytes 4-7.
+        // Requires at least offset+8 bytes to safely access offset+4..offset+7.
+        if (remaining >= 12 && offset + 8 <= bytes.size &&
             bytes[offset + 4] == 'f'.code.toByte() &&
             bytes[offset + 5] == 't'.code.toByte() &&
             bytes[offset + 6] == 'y'.code.toByte() &&

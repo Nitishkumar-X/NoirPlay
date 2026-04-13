@@ -250,8 +250,12 @@ class CastPlayer(
             startSong?.let { song ->
                 val extractorMime = detectAudioMimeTypeViaExtractor(song)?.toCastSupportedMimeTypeOrNull()
                 val retrieverMime = detectAudioMimeTypeViaMetadataRetriever(song)?.toCastSupportedMimeTypeOrNull()
-                val signatureMime = detectAudioMimeTypeBySignature(song)
-                val forcedMime = (extractorMime ?: retrieverMime ?: signatureMime)?.toCastSupportedMimeTypeOrNull()
+                // Only consult signature if extractor+retriever both failed; signature framing scan
+                // can produce false positives on container formats (e.g. MP4 moov atom data).
+                val signatureMime = if (extractorMime == null && retrieverMime == null) {
+                    detectAudioMimeTypeBySignature(song)?.toCastSupportedMimeTypeOrNull()
+                } else null
+                val forcedMime = extractorMime ?: retrieverMime ?: signatureMime
                 if (forcedMime != null) {
                     forcedMimeBySongId[song.id] = forcedMime
                 }
@@ -449,11 +453,16 @@ class CastPlayer(
             .firstNotNullOfOrNull { candidate -> candidate.toCastSupportedMimeTypeOrNull() }
             ?: "audio/mpeg"
 
-        val shouldInspectSignature =
-            normalizedCandidate == "audio/mpeg" ||
-                normalizedCandidate == "audio/aac" ||
-                metadataMimeType == null
-        val signatureMimeType = if (shouldInspectSignature) detectAudioMimeTypeBySignature(this) else null
+        // Container formats from metadata are reliable. Signature detection (framed sync-word scan)
+        // can produce false positives on container binary data (e.g. 0xFF bytes inside MP4 moov atom).
+        // Only use signature to disambiguate truly ambiguous metadata (audio/mpeg or audio/aac).
+        val isContainerFormat = normalizedCandidate != "audio/mpeg" && normalizedCandidate != "audio/aac"
+        if (isContainerFormat) {
+            return normalizedCandidate
+        }
+
+        // Metadata is ambiguous — consult signature detection to resolve.
+        val signatureMimeType = detectAudioMimeTypeBySignature(this)
         if (signatureMimeType != null && signatureMimeType != normalizedCandidate) {
             Timber.tag(castLogTag).w(
                 "MIME mismatch for songId=%s title=%s meta=%s resolver=%s ext=%s signature=%s -> using signature",
@@ -493,6 +502,8 @@ class CastPlayer(
             "audio/mp4",
             "audio/x-m4a",
             "audio/m4a",
+            // M4A/ALAC files may be reported by MediaExtractor as audio/alac — treat as mp4
+            "audio/alac",
             "audio/3gpp",
             "audio/3gp" -> "audio/mp4"
 
@@ -511,6 +522,11 @@ class CastPlayer(
             "audio/amr-wb",
             "audio/l16",
             "audio/l24" -> normalized
+
+            // AIFF is not natively supported by Cast. Map to audio/mpeg as best-effort fallback.
+            "audio/aiff",
+            "audio/x-aiff",
+            "audio/aif" -> "audio/mpeg"
 
             else -> null
         }
@@ -700,7 +716,9 @@ class CastPlayer(
         ) {
             return "audio/aiff"
         }
-        if (remaining >= 12 &&
+        // ISO Base Media File Format (MP4/M4A/M4B): check for 'ftyp' box at bytes 4-7.
+        // Requires at least offset+8 bytes to safely access offset+4..offset+7.
+        if (remaining >= 12 && offset + 8 <= bytes.size &&
             bytes[offset + 4] == 'f'.code.toByte() &&
             bytes[offset + 5] == 't'.code.toByte() &&
             bytes[offset + 6] == 'y'.code.toByte() &&

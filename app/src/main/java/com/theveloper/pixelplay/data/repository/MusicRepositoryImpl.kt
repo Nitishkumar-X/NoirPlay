@@ -279,6 +279,17 @@ class MusicRepositoryImpl @Inject constructor(
         musicDao.getRandomSongs(limit, filter.allowedParentDirs, filter.applyFilter).map { it.toSong() }
     }
 
+    override suspend fun getFirstPlayableSong(): Song? = withContext(Dispatchers.IO) {
+        val allowedDirs = userPreferencesRepository.allowedDirectoriesFlow.first()
+        val blockedDirs = userPreferencesRepository.blockedDirectoriesFlow.first()
+        val (allowedParentDirs, applyDirectoryFilter) =
+            computeAllowedDirs(allowedDirs, blockedDirs)
+        musicDao.getFirstPlayableSong(
+            allowedParentDirs = allowedParentDirs,
+            applyDirectoryFilter = applyDirectoryFilter
+        )?.toSong()
+    }
+
     override suspend fun saveTelegramSongs(songs: List<Song>) {
         val entities = songs.mapNotNull { it.toTelegramEntity() }
         if (entities.isNotEmpty()) {

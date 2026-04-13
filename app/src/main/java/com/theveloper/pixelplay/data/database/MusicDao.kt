@@ -459,6 +459,18 @@ interface MusicDao {
     ): List<SongEntity>
 
     @Query("""
+        SELECT """ + SONG_LIST_PROJECTION + """
+        FROM songs
+        WHERE (:applyDirectoryFilter = 0 OR id < 0 OR parent_directory_path IN (:allowedParentDirs))
+        ORDER BY title COLLATE NOCASE ASC, artist_name COLLATE NOCASE ASC, id ASC
+        LIMIT 1
+    """)
+    suspend fun getFirstPlayableSong(
+        allowedParentDirs: List<String> = emptyList(),
+        applyDirectoryFilter: Boolean = false
+    ): SongEntity?
+
+    @Query("""
         SELECT * FROM songs
         WHERE (:applyDirectoryFilter = 0 OR id < 0 OR parent_directory_path IN (:allowedParentDirs))
     """)

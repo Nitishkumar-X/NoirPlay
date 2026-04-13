@@ -81,6 +81,12 @@ interface MusicRepository {
     suspend fun getRandomSongs(limit: Int): List<Song>
 
     /**
+     * Returns a single playable song without materializing the entire library.
+     * Useful for startup and fallback playback paths.
+     */
+    suspend fun getFirstPlayableSong(): Song?
+
+    /**
      * Obtiene la lista de álbumes filtrada.
      * @return Flow que emite una lista completa de objetos Album.
      */
