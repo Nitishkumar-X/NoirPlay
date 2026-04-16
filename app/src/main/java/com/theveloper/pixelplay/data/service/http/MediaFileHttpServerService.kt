@@ -1842,6 +1842,19 @@ class MediaFileHttpServerService : Service() {
                     }
                 }
 
+                // MediaExtractor sometimes exposes the decoded PCM track of a FLAC file
+                // as "audio/raw" instead of the container format "audio/flac".  Recover
+                // the true format from the file extension / mime metadata so the FLAC → AAC
+                // transcode path is correctly triggered.
+                if (mime == "audio/raw") {
+                    val mimeL = song.mimeType?.lowercase(Locale.ROOT)
+                    val isFlac = song.path.endsWith(".flac", true) ||
+                        mimeL == "audio/flac" || mimeL == "audio/x-flac"
+                    if (isFlac) {
+                        mime = "audio/flac"
+                    }
+                }
+
                 val sr = runCatching { fmt.getInteger(MediaFormat.KEY_SAMPLE_RATE) }.getOrNull() ?: continue
                 val ch = runCatching { fmt.getInteger(MediaFormat.KEY_CHANNEL_COUNT) }.getOrNull() ?: continue
                 return@runCatching AudioCodecInfo(mime, sr, ch, i)

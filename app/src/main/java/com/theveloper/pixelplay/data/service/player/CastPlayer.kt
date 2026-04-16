@@ -910,6 +910,18 @@ class CastPlayer(
                                 }.also { runCatching { mmr.release() } }
                             }
                         }
+                        // MediaExtractor sometimes exposes the decoded PCM track of a FLAC file
+                        // as "audio/raw" instead of the container format "audio/flac".  Recover the
+                        // true format from the file extension / mime metadata so the FLAC → AAC
+                        // transcode path in the caller is correctly triggered.
+                        if (trackMime == "audio/raw") {
+                            val mimeL = song.mimeType?.lowercase(Locale.ROOT)
+                            val isFlac = song.path.endsWith(".flac", true) ||
+                                mimeL == "audio/flac" || mimeL == "audio/x-flac"
+                            if (isFlac) {
+                                trackMime = "audio/flac"
+                            }
+                        }
                         return@runCatching trackMime
                     }
                 }
