@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -37,6 +40,10 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import coil.size.Size
 import com.theveloper.pixelplay.data.model.Song
 import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
+import com.theveloper.pixelplay.ui.theme.LiquidGlassDefaults
+import com.theveloper.pixelplay.ui.theme.LiquidGlassIconButton
 
 internal val LocalMaterialTheme = staticCompositionLocalOf<ColorScheme> { error("No ColorScheme provided") }
 
@@ -73,147 +82,160 @@ internal fun MiniPlayerContentInternal(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val controlsEnabled = !isCastConnecting && !isPreparingPlayback
+    val scheme = LocalMaterialTheme.current
 
-    val previousInteraction = remember { MutableInteractionSource() }
-    val playPauseInteraction = remember { MutableInteractionSource() }
-    val nextInteraction = remember { MutableInteractionSource() }
-    val miniPlayerIndication = remember { ripple(bounded = false) }
+    // Liquid glass specular gradient for the top of the mini player
+    val specularGradient = remember {
+        Brush.linearGradient(
+            colorStops = arrayOf(
+                0.0f to Color(0x30FFFFFF),
+                0.5f to Color(0x00FFFFFF)
+            ),
+            start = Offset(0f, 0f),
+            end   = Offset(400f, 100f)
+        )
+    }
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(MiniPlayerHeight)
-            .padding(start = 10.dp, end = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val albumArtModel = song.albumArtUriString?.takeIf { it.isNotBlank() }
-        Box(contentAlignment = Alignment.Center) {
-            key(song.id) {
-                SmartImage(
-                    model = albumArtModel,
-                    contentDescription = "Carátula de ${song.title}",
-                    shape = CircleShape,
-                    targetSize = Size(150, 150),
-                    modifier = Modifier.size(44.dp),
-                    placeholderModel = if (albumArtModel?.startsWith("telegram_art") == true) {
-                        "$albumArtModel?quality=thumb"
-                    } else null
-                )
-            }
-            if (isCastConnecting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = LocalMaterialTheme.current.onPrimaryContainer
-                )
-            } else if (isPreparingPlayback) {
-                CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
-            }
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Center
-        ) {
-            val titleStyle = MaterialTheme.typography.titleSmall.copy(
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.2).sp,
-                fontFamily = GoogleSansRounded,
-                color = LocalMaterialTheme.current.onPrimaryContainer
-            )
-            val artistStyle = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 13.sp,
-                letterSpacing = 0.sp,
-                fontFamily = GoogleSansRounded,
-                color = LocalMaterialTheme.current.onPrimaryContainer.copy(alpha = 0.7f)
-            )
-
-            AutoScrollingText(
-                text = when {
-                    isCastConnecting -> "Connecting to device…"
-                    isPreparingPlayback -> "Preparing playback…"
-                    else -> song.title
-                },
-                style = titleStyle,
-                gradientEdgeColor = LocalMaterialTheme.current.primaryContainer
-            )
-            AutoScrollingText(
-                text = if (isPreparingPlayback) "Loading audio…" else song.displayArtist,
-                style = artistStyle,
-                gradientEdgeColor = LocalMaterialTheme.current.primaryContainer
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-
+    Box(modifier = modifier.fillMaxWidth().height(MiniPlayerHeight)) {
+        // Glass specular shimmer overlay
         Box(
             modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(LocalMaterialTheme.current.onPrimary)
-                .clickable(
-                    interactionSource = previousInteraction,
-                    indication = miniPlayerIndication,
-                    enabled = controlsEnabled
-                ) {
+                .matchParentSize()
+                .drawBehind {
+                    drawRect(brush = specularGradient)
+                }
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 12.dp, end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ── Album Art ──────────────────────────────────────────────────
+            val albumArtModel = song.albumArtUriString?.takeIf { it.isNotBlank() }
+            Box(contentAlignment = Alignment.Center) {
+                key(song.id) {
+                    SmartImage(
+                        model = albumArtModel,
+                        contentDescription = "Album art: ${song.title}",
+                        shape = RoundedCornerShape(12.dp),
+                        targetSize = Size(150, 150),
+                        modifier = Modifier.size(44.dp),
+                        placeholderModel = if (albumArtModel?.startsWith("telegram_art") == true) {
+                            "$albumArtModel?quality=thumb"
+                        } else null
+                    )
+                }
+                if (isCastConnecting) {
+                    CircularProgressIndicator(
+                        modifier  = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color     = scheme.onPrimaryContainer
+                    )
+                } else if (isPreparingPlayback) {
+                    CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // ── Title + Artist ─────────────────────────────────────────────
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                val titleStyle = MaterialTheme.typography.titleSmall.copy(
+                    fontSize     = 14.sp,
+                    fontWeight   = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                    fontFamily   = GoogleSansRounded,
+                    color        = Color.White
+                )
+                val artistStyle = MaterialTheme.typography.bodySmall.copy(
+                    fontSize     = 12.sp,
+                    letterSpacing = 0.sp,
+                    fontFamily   = GoogleSansRounded,
+                    color        = Color.White.copy(alpha = 0.6f)
+                )
+                AutoScrollingText(
+                    text = when {
+                        isCastConnecting     -> "Connecting to device…"
+                        isPreparingPlayback  -> "Preparing playback…"
+                        else                 -> song.title
+                    },
+                    style = titleStyle,
+                    gradientEdgeColor = Color.Transparent
+                )
+                AutoScrollingText(
+                    text = if (isPreparingPlayback) "Loading audio…" else song.displayArtist,
+                    style = artistStyle,
+                    gradientEdgeColor = Color.Transparent
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // ── Controls — glass icon buttons ──────────────────────────────
+            LiquidGlassIconButton(
+                onClick  = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onPrevious()
                 },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.SkipPrevious,
-                contentDescription = "Anterior",
-                tint = LocalMaterialTheme.current.primary,
-                modifier = Modifier.size(22.dp)
-            )
-        }
+                modifier  = Modifier.size(36.dp),
+                fillColor = LiquidGlassDefaults.GlassFillMedium,
+                borderColor = LiquidGlassDefaults.GlassBorder,
+                enabled  = controlsEnabled
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.SkipPrevious,
+                    contentDescription = "Previous",
+                    tint     = Color.White.copy(alpha = if (controlsEnabled) 0.9f else 0.4f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(LocalMaterialTheme.current.primary)
-                .clickable(
-                    interactionSource = playPauseInteraction,
-                    indication = miniPlayerIndication,
-                    enabled = controlsEnabled
-                ) {
+            // Play / Pause — highlighted with primary glow
+            LiquidGlassIconButton(
+                onClick  = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onPlayPause()
                 },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                tint = LocalMaterialTheme.current.onPrimary,
-                modifier = Modifier.size(22.dp)
-            )
-        }
+                modifier    = Modifier.size(42.dp),
+                fillColor   = scheme.primary.copy(alpha = 0.30f),
+                borderColor = scheme.primary.copy(alpha = 0.60f),
+                glowColor   = if (isPlaying) scheme.primary else null,
+                enabled     = controlsEnabled
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint     = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(LocalMaterialTheme.current.onPrimary)
-                .clickable(
-                    interactionSource = nextInteraction,
-                    indication = miniPlayerIndication,
-                    enabled = controlsEnabled
-                ) { onNext() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.SkipNext,
-                contentDescription = "Siguiente",
-                tint = LocalMaterialTheme.current.primary,
-                modifier = Modifier.size(22.dp)
-            )
+            LiquidGlassIconButton(
+                onClick  = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onNext()
+                },
+                modifier    = Modifier.size(36.dp),
+                fillColor   = LiquidGlassDefaults.GlassFillMedium,
+                borderColor = LiquidGlassDefaults.GlassBorder,
+                enabled     = controlsEnabled
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.SkipNext,
+                    contentDescription = "Next",
+                    tint     = Color.White.copy(alpha = if (controlsEnabled) 0.9f else 0.4f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

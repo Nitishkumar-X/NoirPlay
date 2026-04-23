@@ -56,11 +56,20 @@ val DarkColorScheme = darkColorScheme(
     tertiary = PixelPlayOrange,
     background = PixelPlayPurpleDark,
     surface = PixelPlaySurface,
+    surfaceVariant = Color(0xFF1A162A),
     onPrimary = PixelPlayWhite,
     onSecondary = PixelPlayWhite,
     onTertiary = PixelPlayWhite,
     onBackground = PixelPlayWhite,
-    onSurface = PixelPlayLightPurple, // Texto sobre superficies
+    onSurface = PixelPlayLightPurple,
+    onSurfaceVariant = PixelPlayLightPurple.copy(alpha = 0.75f),
+    primaryContainer = Color(0xFF2A1858),
+    onPrimaryContainer = PixelPlayLightPurple,
+    secondaryContainer = Color(0xFF4A1833),
+    onSecondaryContainer = Color(0xFFFFB3C8),
+    outline = Color(0xFF5A4A7A),
+    outlineVariant = Color(0xFF3A2A5A),
+    scrim = Color(0x99000000),
     error = Color(0xFFFF5252),
     onError = PixelPlayWhite
 )
