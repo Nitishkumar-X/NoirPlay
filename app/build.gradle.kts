@@ -45,6 +45,10 @@ android {
             excludes.add("META-INF/NOTICE.txt")
             excludes.add("META-INF/NOTICE.md")
         }
+        // Strip debug symbols from native .so files — dramatically reduces APK size
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     defaultConfig {
@@ -55,6 +59,12 @@ android {
         versionName = project.findProperty("APP_VERSION_NAME") as String
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Only include arm64-v8a native libs (FFmpeg, TDLib etc.) to keep APK size lean.
+        // 99% of modern Android phones use arm64. Remove this if you need armeabi-v7a support.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     buildTypes {
