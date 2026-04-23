@@ -113,25 +113,18 @@ val GoogleSansRounded = FontFamily(
 // Considerar añadir fuentes personalizadas en res/font para un look más único.
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.Bold,
+        fontFamily = MontserratFamily,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 48.sp,
         lineHeight = 56.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.01).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = GoogleSansRounded,
+        fontFamily = MontserratFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
-        letterSpacing = 0.sp
-    ),
-    displaySmall = TextStyle(
-        fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.Normal,
-        fontSize = 30.sp,
-        lineHeight = 38.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.01).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = GoogleSansRounded,
@@ -156,9 +149,9 @@ val Typography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 30.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
