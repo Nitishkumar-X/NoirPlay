@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -100,7 +99,7 @@ internal fun MiniPlayerContentInternal(
         // Glass specular shimmer overlay
         Box(
             modifier = Modifier
-                .matchParentSize()
+                .fillMaxSize()
                 .drawBehind {
                     drawRect(brush = specularGradient)
                 }
